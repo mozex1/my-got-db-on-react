@@ -1,8 +1,7 @@
-import React, {Component} from "react";
+import React, {useState, useEffect} from "react";
 import Spinner from "./spinner/spinner.js";
 import PropTypes from 'prop-types'; 
 import styled from 'styled-components';
-import GotService from '../services/gotService.js'
 
 const ListGroup = styled.ul`
     overflow: hidden;
@@ -26,72 +25,56 @@ const LiItem = styled.li`
     }
 `
 
-class ItemList  extends Component {
+export default function ItemList({getData, onItemSelected, renderItem, character}) {
+    const [itemList, updateList] = useState([]);
 
-    renderItems(arr) {
-        const {character} = this.props;
+    useEffect(() => {
+        getData()
+            .then((data) => {
+                updateList(data);
+                console.log(updateList(data));
+            })
+    }, [])
+
+    
+
+    function renderItems(arr) {
         return arr.map((item, i) => {
+            const label = renderItem(item);
             
-            const label = this.props.renderItem(item);
             let counterId = i + 1;
-            if(character) { counterId = 61 + i }
-                return (
-                    <LiItem 
-                    key={i}
-                    onClick={() => this.props.onItemSelected(counterId)}
-                    >{label}
-                    </LiItem>
-                )
+            if(character) { counterId = i + 61}
+            return (
+                <LiItem 
+                key={i}
+                onClick={() => onItemSelected(counterId)}
+                >{label}
+                </LiItem>
+            )
 
             
         })
     }
 
-    render() {
-        const {data} = this.props;
-        const items = this.renderItems(data);
+    if (!itemList) {
+        return <ListGroup><Spinner/></ListGroup>
+    }
 
-        return (
-            <>
-                <ListGroup>
-                    {items}
-                </ListGroup>
-            </>
-        )
-    }  
+    const items = renderItems(itemList);
+
+    return (
+        <>
+            <ListGroup>
+                {items}
+            </ListGroup>
+        </>
+    ) 
 }
 
 ItemList.propTypes = {
     onItemSelected: PropTypes.func,
 }
 
-const withData = (View, getData) => {
-    return class extends Component {
-        state = {
-            data: null,
-        }
-    
-        componentDidMount() {
-            getData()
-                .then((data) => {
-                    this.setState({
-                        data: data,
-                    })
-                })
-        }
-        render(){
-            const {data} = this.state;
-
-            if (!data) {
-                return <ListGroup><Spinner/></ListGroup>
-            }
-            return <View {...this.props} data={data}/>
-        }
-    }
-}
-
-const {getAllCharacters} = new GotService();
-export default withData(ItemList, getAllCharacters);
 
 
 
